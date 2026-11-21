@@ -1,42 +1,78 @@
 import React from 'react';
 import { Pressable, Text, StyleSheet, View } from 'react-native';
-import { CampusEvent } from '../data/events';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  ZoomIn,
+} from 'react-native-reanimated';
+import type { CampusEvent } from '../data/events';
 
 interface EventRowProps {
   event: CampusEvent;
   isSaved: boolean;
   onPress: () => void;
-  onLongPress: () => void;
+  onToggleSaved: () => void;
 }
 
 export const EventRow: React.FC<EventRowProps> = ({
   event,
   isSaved,
   onPress,
-  onLongPress,
+  onToggleSaved,
 }) => {
   return (
-    <Pressable
-      onPress={onPress}
-      onLongPress={onLongPress}
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+    <Animated.View
+      entering={FadeIn}
+      exiting={FadeOut}
+      layout={LinearTransition}
+      style={styles.wrapper}
     >
-      <View style={styles.content}>
-        <Text style={styles.title}>{event.title}</Text>
-        <Text style={styles.subtext}>
-          {event.date} • {event.place}
-        </Text>
-      </View>
-      {isSaved && <Text style={styles.savedBadge}>Saved</Text>}
-    </Pressable>
+      <Swipeable
+        friction={2}
+        rightThreshold={60}
+        renderRightActions={(_progress, _translation, swipeable) => (
+          <Pressable
+            onPress={() => {
+              onToggleSaved();
+              swipeable.close();
+            }}
+            style={styles.action}
+          >
+            <Text style={styles.actionText}>{isSaved ? 'Unsave' : 'Save'}</Text>
+          </Pressable>
+        )}
+      >
+        <Pressable
+          onPress={onPress}
+          onLongPress={onToggleSaved}
+          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+        >
+          <View style={styles.content}>
+            <Text style={styles.title}>{event.title}</Text>
+            <Text style={styles.subtext}>
+              {event.date} • {event.place}
+            </Text>
+          </View>
+          {isSaved && (
+            <Animated.Text entering={ZoomIn} style={styles.savedBadge}>
+              Saved
+            </Animated.Text>
+          )}
+        </Pressable>
+      </Swipeable>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
+  wrapper: {
+    marginVertical: 4,
+  },
   card: {
     minHeight: 44,
     padding: 12,
-    marginVertical: 4,
     backgroundColor: '#f9f9f9',
     borderRadius: 8,
     flexDirection: 'row',
@@ -64,5 +100,19 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  action: {
+    minHeight: 44,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  actionText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 15,
   },
 });
